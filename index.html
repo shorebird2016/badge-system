@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en" ng-app="badgeApp" ng-cloak>
+<head>
+    <meta charset="UTF-8">
+    <title>CLDAA Member Badge System</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <link rel="stylesheet" href="lib/lightbox.css">
+    <style>
+        body { background-image: url("bg-image.jpg"); overflow: hidden; }
+        #header {
+            width: 100%;
+            min-height: 105px;
+            background: #e0e8ef;
+            top: 0;
+            padding: 0;
+            position: fixed;
+        }
+        .nav *, .form-group * { font-size: 105%; }
+        .navbar-collapse { background-color: lightgrey; }
+
+        /*photo holder*/
+        .album { display: flex; flex-wrap: wrap; justify-content: space-around; margin-top: 105px; overflow-y: scroll; }
+        @media (min-width: 400px) {
+            .photo-block { width: 50%; }
+        }
+        @media (min-width: 900px) {
+            .photo-block { width: 25%; }
+        }
+        @media (min-width: 1200px) {
+            .photo-block { width: 15%; }
+        }
+        footer {
+            width: 100%;
+            min-height: 20px;
+            background: lightgrey;
+            padding-left: 20px;
+            bottom: 0;
+            position: fixed;
+        }
+
+        /*list of missing photos*/
+        .modal-body { display: flex; flex-wrap: wrap; }
+    </style>
+</head>
+<body ng-controller="badgeCtrl as CTRL">
+    <!-- title / toolbar -->
+    <div class="container-fluid" id="header">
+        <h3 align="center">CLDAA Member Badges</h3>
+        <!-- top toolbar: ID, dropdowns -->
+        <div class="collapse navbar-collapse">
+            <ul class="nav navbar-nav">
+                <!-- member type -->
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true"
+                       aria-expanded="false">Member Type <span class="caret"></span></a>
+                    <ul class="dropdown-menu">
+                        <li><a href="#" ng-click="CTRL.filter(0)">All Members</a></li>
+                        <li role="separator" class="divider"></li>
+                        <li><a href="#" ng-click="CTRL.filter(1)">Regular Member</a></li>
+                        <li><a href="#" ng-click="CTRL.filter(2)">Lifetime Member</a></li>
+                        <li><a href="#" ng-click="CTRL.filter(3)">Inner Cirle Team</a></li>
+                    </ul>
+                </li>
+                <!-- member location -->
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Location  <span class="caret"></span></a>
+                    <ul class="dropdown-menu">
+                        <li><a href="#" ng-click="CTRL.filter(10);">Milbrae 1</a></li>
+                        <li><a href="#" ng-click="CTRL.filter(11);">Milbrae 2</a></li>
+                        <li role="separator" class="divider"></li>
+                        <li><a href="#" ng-click="CTRL.filter(12);">Cupertino 1</a></li>
+                        <li><a href="#" ng-click="CTRL.filter(13);">Cupertino 2</a></li>
+                        <li role="separator" class="divider"></li>
+                        <li><a href="#" ng-click="CTRL.filter(14);">Headquarter 1</a></li>
+                        <li><a href="#" ng-click="CTRL.filter(15);">Headquarter 2</a></li>
+                        <li role="separator" class="divider"></li>
+                        <li><a href="#" ng-click="CTRL.filter(16);">Almaden</a></li>
+                        <li><a href="#" ng-click="CTRL.filter(17);">Evergreen</a></li>
+                        <li><a href="#" ng-click="CTRL.filter(18);">Milpitas</a></li>
+                        <li role="separator" class="divider"></li>
+                        <li><a href="#" ng-click="CTRL.filter(19);">Fremont 1</a></li>
+                        <li><a href="#" ng-click="CTRL.filter(20);">Fremont 2</a></li>
+                        <li role="separator" class="divider"></li>
+                        <li><a href="#" ng-click="CTRL.filter(21);">San Jose</a></li>
+                        <li><a href="#" ng-click="CTRL.filter(22);">Sunnyvale</a></li>
+                    </ul>
+                </li>
+            </ul>
+            <!-- search widget -->
+            <form class="navbar-form navbar-right" role="search">
+                <div class="form-group">
+                    <input id="ENTRY_ID" type="text" class="form-control" placeholder="ID" style="width: 80px;">
+                    <input id="ENTRY_LAST_NAME" type="text" class="form-control" placeholder="Last Name" style="width: 120px;">
+                    <input id="ENTRY_FIRST_NAME" type="text" class="form-control" placeholder="First Name" style="width: 120px;">
+                    <button class="btn btn-default" ng-click="CTRL.findMember();"
+                            data-toggle="tooltip" data-placement="top" title="Find member(s)">
+                        <span class="glyphicon glyphicon-search"></span>
+                    </button>
+                    <button class="btn btn-default" ng-click="CTRL.clearFields();"
+                            data-toggle="tooltip" data-placement="top" title="Clear text inputs">
+                        <span class="glyphicon glyphicon-remove"></span></button>
+                    <button class="btn btn-default" ng-click="CTRL.showNoPhoto();" data-target="#DLG-NO-PHOTO"
+                            data-toggle="modal" data-placement="top" title="Find list of missing images">
+                    <span class="glyphicon glyphicon-list-alt"></span>
+                    </button>
+                </div>
+            </form>
+        </div><!-- navbar-collapse -->
+    </div>
+
+    <!-- member photos -->
+    <div class="album">
+        <div class="photo-block" ng-repeat="mbr in CTRL.filteredMembers">
+            <a href="{{ mbr.image }}" data-lightbox="member"
+               data-title="{{ mbr.firstName + ' ' + mbr.lastName + ' ( ' + mbr.id + ' )' }}">
+            <img class="img-rounded img-responsive center-block" no-image onerror="markImage(this)"
+                    ng-src="{{ mbr.image }}" style="height: 220px"></a>
+            <p align="center">{{ mbr.firstName + " " + mbr.lastName }}</p>
+            <p align="center" style="font-weight: bold;">{{ mbr.id }}</p>
+            <p align="center">{{ CTRL.getMemberType(mbr) }} {{ CTRL.getLocation(mbr) }}</p>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        {{ CTRL.filteredMembers.length }} record(s)
+    </footer>
+
+    <!-- dialog for showing members without photo -->
+    <div class="modal fade" role="dialog" id="DLG-NO-PHOTO">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title">Members Missing Photo</h4>
+                </div>
+                <div class="modal-body">
+                    <div ng-repeat="ID in CTRL.membersWithoutImage">
+                        {{ ID }} &nbsp;&nbsp;
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.6.3/angular.js"></script>
+<script src="lib/lightbox.js"></script>
+<script src="main.js"></script>
+<script>
+    $(document).ready(function () {
+        $('[data-toggle="tooltip"]').tooltip({ trigger: 'hover' });/*use trigger to turn off tooltip after click*/
+
+        //--use jQuery to calculate real height for "album" div such that scroll bar knows the range
+        var doc_height = $(window).innerHeight();
+        var header_height = $('#header').height();
+        var footer_height = $('footer').height();
+        var album_height = doc_height - (header_height + footer_height);
+        $(".album").css({
+            "height": (album_height - footer_height) + "px",
+            "margin-bottom": footer_height + "px"
+        });
+//alert("Calc'd height " + $(".album").height());
+    })
+</script>
+</body>
+</html>
+
